@@ -376,7 +376,6 @@ res<-ssMediation.Sobel(power = .80,  theta.1a = .8186, lambda.a = .4039, sigma.x
 ceiling(res$n)
 
 ```
-### method based on bootstrap
 
 ### method based on Sobel test
 ```{r}
