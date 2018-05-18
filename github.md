@@ -546,7 +546,7 @@ ceiling(res$v)+k+1
 Mediation
 =========
 
-First, install the required packages.
+### method based on Sobel test
 
 ``` r
 if(!require("powerMediation"))
@@ -578,3 +578,31 @@ ceiling(res$n)
 ```
 
     ## [1] 57
+
+### method based on Sobel test
+
+``` r
+if(!require("bmem"))
+  install.packages("bmem")
+ library("bmem")
+### input ###
+# a, b,  are the coefficients as in standard mediational path diagram
+a<-.8186
+b<-.4039
+c<- .4334
+
+### end of input ###
+
+model <- paste(
+  'M ~ a*X + start(',a,')*X',
+  'Y ~ b*M + c*X + start(',b,') * M + start(.4334)*X',
+  'X ~~ start(1)*X',
+  'M ~~ start(1)*M',
+  'Y ~~ start(1)*Y'
+)
+set.seed(1234)
+power.result <- power.boot(model, indirect = 'ab := a*b', nobs = 100) 
+summary(power.result)
+## results: expected N
+summary
+```

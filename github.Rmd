@@ -378,7 +378,7 @@ ceiling(res$n)
 ```
 
 ### method based on Sobel test
-```{r}
+```{r }
 if(!require("bmem"))
   install.packages("bmem")
  library("bmem")
