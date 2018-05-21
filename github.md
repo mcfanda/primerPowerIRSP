@@ -7,6 +7,13 @@ Introduction
 
 In this page one can found all the R functions discussed in Perugini, Gallucci, Constantini (2018), A practical primer to power analysis for simple experimental designs. **International Review of Social Psychology**. [rewf here](here). Examples are taken from the papers. In all the examples that requires multiple lines of code the user needs to update only the variables listed before `### end of input ###` comment. The results are computed automatically for the required N. Small changes in the code are required for other power parameters.
 
+The following code installs all the necessary packages, only if they are not already installed on your computer
+``` r
+if(!require("pacman")) install.packages("pacman")
+pacman::p_load("ggplot2", "pwr", "easypower", "powerMediation", "bmem")
+```
+
+
 t-test
 ======
 
@@ -59,7 +66,7 @@ In the paper we suggested to look at the relationship between total sample size 
 Same function with the option `type = "paired"`
 
 ``` r
-library(ggplot2)
+library("ggplot2")
 
 N<-seq(20,140,by=20)
 
@@ -118,7 +125,7 @@ One way Analysis of Variance
 For all F-test related power analysis, it is generally better to use `pwr.f2.test()` function from [pwr packae](https://cran.r-project.org/web/packages/pwr/index.html). The function uses \(f^2\) as effect size, which is the squared of the \(f\) used by GPower "ANOVA: Fixed effects, omnibus and one-way". Here we assume one has the \(\eta_p^2\), which in one-way ANOVA is the \(R^2\). For required N (total sample size) one needs to add \(k\) to the
 
 ``` r
-library(pwr)
+library("pwr")
 
 ## input ##
 etap<-.326
@@ -157,7 +164,7 @@ method 1
 Here we keep using `pwr.f2.test` because it can be used for any F-test in the linear model. However, for prospective power (required total N) the function returns the required error degrees of freedom, so the required N must be approximate adding the effects degrees of freedom to the error degrees of freedom. The following code does it automatically.
 
 ``` r
-library(pwr)
+library("pwr")
 
 ## input for interaction##
 etap<-.10
@@ -252,7 +259,7 @@ Method 2
 The package [easypower](https://cran.r-project.org/web/packages/easypower/index.html) provides short cuts for factorial ANOVA power analysis. It provides a dedicated function `n.multiway()` which simplifies computation of required N for main effects and interaction. It does not provide estimates for post-hoc power and other applications of power analysis.
 
 ``` r
-library(easypower)
+library("easypower")
 ## input ##
 etap<-.10
 k1<-3
@@ -548,15 +555,9 @@ Mediation
 
 ### method based on Sobel test
 
-``` r
-if(!require("powerMediation"))
-{install.packages("powerMediation")
-  library("powerMediation")}
-```
-
-    ## Loading required package: powerMediation
 
 ``` r
+library("powerMediation")
 ### input ###
 # a, b,  are the coefficients as in standard mediational path diagram
 a<-.8186
@@ -582,27 +583,24 @@ ceiling(res$n)
 ### method based on Sobel test
 
 ``` r
-if(!require("bmem"))
-  install.packages("bmem")
- library("bmem")
+library("bmem")
 ### input ###
-# a, b,  are the coefficients as in standard mediational path diagram
+# a, b,  are the coefficients as in standard mediational path diagram, n is the sample size-
 a<-.8186
 b<-.4039
 c<- .4334
+nobs <- 100
 
 ### end of input ###
 
-model <- paste(
+model <- paste(c(
   'M ~ a*X + start(',a,')*X',
   'Y ~ b*M + c*X + start(',b,') * M + start(.4334)*X',
   'X ~~ start(1)*X',
   'M ~~ start(1)*M',
-  'Y ~~ start(1)*Y'
+  'Y ~~ start(1)*Y'), collapse = "\n"
 )
 set.seed(1234)
-power.result <- power.boot(model, indirect = 'ab := a*b', nobs = 100) 
+power.result <- power.boot(model, indirect = 'ab := a*b', nobs = nobs) 
 summary(power.result)
-## results: expected N
-summary
 ```
