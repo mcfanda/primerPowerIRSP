@@ -1,18 +1,11 @@
 R scripts
 ================
-marcello gallucci
+Marcello Gallucci, Giulio Constantini & Marco Perugini
 
 Introduction
 ============
 
-In this page one can found all the R functions discussed in Perugini, Gallucci, Constantini (2018), A practical primer to power analysis for simple experimental designs. **International Review of Social Psychology**. [rewf here](here). Examples are taken from the papers. In all the examples that requires multiple lines of code the user needs to update only the variables listed before `### end of input ###` comment. The results are computed automatically for the required N. Small changes in the code are required for other power parameters.
-
-The following code installs all the necessary packages, only if they are not already installed on your computer
-``` r
-if(!require("pacman")) install.packages("pacman")
-pacman::p_load("ggplot2", "pwr", "easypower", "powerMediation", "bmem")
-```
-
+In this page one can found all the R functions discussed in Perugini, Gallucci, Constantini (2018), A practical primer to power analysis for simple experimental designs. **International Review of Social Psychology**. [rewf here](here). Examples are taken from the papers. In all the examples that require multiple lines of code the user needs to update only the variables listed before `### end of input ###` comment. The results are computed automatically for the required N. Small changes in the code are required to compute other power parameters.
 
 t-test
 ======
@@ -20,7 +13,7 @@ t-test
 Independent Samples
 -------------------
 
-The simplest function for independent samples t.test. To use with Cohen's d, set `sd=1` and put `delta=d`, where `d` is your effect size.
+A very simple function for independent samples t-test. To use with Cohen's d, set `sd=1` and put `delta=d`, where `d` is your effect size.
 
 ``` r
 power.t.test(power=.80, sig.level=.05, delta=.5, sd=1)
@@ -63,8 +56,6 @@ Sensitivity analysis
 
 In the paper we suggested to look at the relationship between total sample size and effect size for a given power level (.80 in the example) and alpha (.05 in the example). In R this can be done as follows:
 
-Same function with the option `type = "paired"`
-
 ``` r
 library("ggplot2")
 
@@ -76,19 +67,7 @@ for (i in seq(N)) {
    one.power<-power.t.test(power=.80, sig.level=.05, sd=1, n=N[i])
    dat$d[i]<-one.power$delta
 }
-dat
-```
 
-    ##     n         d
-    ## 1  20 0.9091306
-    ## 2  40 0.6342990
-    ## 3  60 0.5157044
-    ## 4  80 0.4456872
-    ## 5 100 0.3981400
-    ## 6 120 0.3631544
-    ## 7 140 0.3360146
-
-``` r
 plt<-ggplot(dat,aes(y=d,x=n, label = round(d,digits = 2))) +stat_smooth(method = "loess",se=FALSE)
 plt<-plt+labs(x="Totale sample size",y="Effect size d")
 plt<-plt+scale_x_continuous(breaks=seq(min(N),max(N),by=20))
@@ -122,7 +101,7 @@ power.t.test(power=.80, sig.level=.05, delta=0.527, sd=1,type = "paired")
 One way Analysis of Variance
 ============================
 
-For all F-test related power analysis, it is generally better to use `pwr.f2.test()` function from [pwr packae](https://cran.r-project.org/web/packages/pwr/index.html). The function uses \(f^2\) as effect size, which is the squared of the \(f\) used by GPower "ANOVA: Fixed effects, omnibus and one-way". Here we assume one has the \(\eta_p^2\), which in one-way ANOVA is the \(R^2\). For required N (total sample size) one needs to add \(k\) to the
+For all F-test related power analysis, it is generally better to use `pwr.f2.test()` function from [pwr package](https://cran.r-project.org/web/packages/pwr/index.html). The function uses *f*<sup>2</sup> as effect size, which is the square of the *f* used by GPower "ANOVA: Fixed effects, omnibus and one-way". Here we assume one has the *η*<sub>*p*</sub><sup>2</sup>, which in one-way ANOVA is the *R*<sup>2</sup>. For required N (total sample size) one needs to input also *k*, the number of groups defined by the independent variable.
 
 ``` r
 library("pwr")
@@ -294,7 +273,7 @@ Power analysis for contrasts
 
 ### Generic Contrasts
 
-Main effects and interaction for example in Table 2. They are all equivalent, so we go for the interaction. We compute the \(f\) as in the paper, but use \(f^2\) as required by \`pwr.f2.
+Main effects and interaction for example in Table 2. They are all equivalent, so we go for the interaction. We compute the *f* as in the paper, but use *f*<sup>2</sup> as required by \`pwr.f2.
 
 ``` r
 ## input ##
@@ -437,7 +416,7 @@ ceiling(res$v)+(length(cont)*l)
 
     ## [1] 98
 
-The same results can be obtained if one specifies anticipating all expected means and pooled standard deviation (tedious method)
+The same results can be obtained if one anticipates all expected means and pooled standard deviation (tedious method)
 
 ``` r
 Replicated<-c(5,9,16,20)
@@ -465,7 +444,7 @@ ceiling(res$v)+length(cont1)*2
 Regression Analysis
 ===================
 
-Any effect in simple and the multiple regression for which the \(\eta_p^2\) is available can be evaluated witht he following code. here is an example for a regression with three predictors and a small effect size, according to Cohen's (Cohen, 1988) classification.
+Any effect in simple and the multiple regression for which the *η*<sub>*p*</sub><sup>2</sup> is available can be evaluated witht he following code. here is an example for a regression with three predictors and a small effect size, according to Cohen's (Cohen, 1988) classification.
 
 ``` r
 ## input ##
@@ -494,7 +473,7 @@ The researcher needs to estimate the expected correlation between the continuous
 
 ``` r
 ## input ##
-ra<-.30
+ra<-.0
 rb<-.50
 k<-3 # number of coefficients in the regression (not considering the intercept)
 ## end of input ##
@@ -502,13 +481,13 @@ k<-3 # number of coefficients in the regression (not considering the intercept)
 (bint<-abs(ra-rb))
 ```
 
-    ## [1] 0.2
+    ## [1] 0.5
 
 ``` r
 (f2<-bint^2/(2*(2-ra^2-rb^2)))
 ```
 
-    ## [1] 0.01204819
+    ## [1] 0.07142857
 
 ``` r
 ## expected N ###
@@ -516,7 +495,7 @@ res<-pwr.f2.test(u=1,power=.80,sig.level = .05, f2=f2)
 ceiling(res$v)+k+1
 ```
 
-    ## [1] 656
+    ## [1] 114
 
 Interaction between continuous predictors
 -----------------------------------------
@@ -531,16 +510,10 @@ r_change<-.175
 k<-3 # number of coefficients in the regression (not considering the intercept)
 ## end of input ##
 
-(bint<-abs(ra-rb))
+(f2<-r_change^2/(1-r_yx^2-r_ym^2))
 ```
 
-    ## [1] 0.2
-
-``` r
-(f2<-bint^2/(2*(2-ra^2-rb^2)))
-```
-
-    ## [1] 0.01204819
+    ## [1] 0.03757669
 
 ``` r
 ## expected N ###
@@ -548,13 +521,12 @@ res<-pwr.f2.test(u=1,power=.80,sig.level = .05, f2=f2)
 ceiling(res$v)+k+1
 ```
 
-    ## [1] 656
+    ## [1] 213
 
 Mediation
 =========
 
 ### method based on Sobel test
-
 
 ``` r
 library("powerMediation")
@@ -580,7 +552,11 @@ ceiling(res$n)
 
     ## [1] 57
 
-### method based on Sobel test
+### method based on bootstrap analysis
+
+The code below allows computing the power achieved with a certain sample size, that must be indicated as nobs below. The achieved power for the Indirect/Mediation effect (ab) using a sample of size nobs can be read under column "Power".
+
+The following code is based on boostrap and it takes a lot of time (several hours) to run. Be extremely patient (or leave it running at night). If you have a multi-core processor, function power.boot implements parallel processing to speed-up computations. See ?power.boot for details.
 
 ``` r
 library("bmem")
