@@ -580,3 +580,26 @@ set.seed(1234)
 power.result <- power.boot(model, indirect = 'ab := a*b', nobs = nobs) 
 summary(power.result)
 ```
+
+    ## Basic information:
+    ##   Esimation method                                  ML
+    ##   Standard error                              standard
+    ##   Number of requested bootstrap                   1000
+    ##   Number of requested replications                1000
+    ##   Number of successful replications               1000
+    ##                        True  Estimate      MSE      SD     Power Power.se Coverage
+    ## Regressions:
+    ##   M ~
+    ## Basic information:
+    ## X         (a)      0.819    0.826    0.100    0.104    1.000    0.000    0.942
+    ## Y ~
+    ## M         (b)      0.404    0.402    0.101    0.105    0.966    0.006    0.933
+    ## X         (c)      0.433    0.431    0.131    0.129    0.897    0.010    0.946
+    ## 
+    ## Variances:
+    ## X                  1.000    0.989    0.136    0.135    1.000    0.000    0.927
+    ## M                  1.000    0.978    0.135    0.135    1.000    0.000    0.921
+    ## Y                  1.000    0.974    0.134    0.140    1.000    0.000    0.894
+    ## 
+    ## Indirect/Mediation effects:
+    ## ab                 0.331    0.332    0.094    0.095    0.966    0.006    0.928
