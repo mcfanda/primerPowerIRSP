@@ -1,0 +1,490 @@
+---
+output:
+  html_document: default
+  word_document: default
+editor_options: 
+  chunk_output_type: console
+---
+
+```{r}
+library(jtools)
+
+```
+
+# How to do power analysis
+
+## Main features of G*Power
+
+* Cohen's d: $M_1-M_2 \over{SD_{pooled}}$
+* t-test to d:  $d={2t \over{sqrt(N-2)}}$
+
+## Paired Groups (repeated measures)
+
+* Cohen's standardized d [bonett2015interval, 367, eq. 1]: $d \over{sqrt{2(1-\rho)}}$
+* $\d=.50$, $\rho=.rr$ $d_z$=`r .50/(sqrt(2*(1-.55)))`
+* d from t $d_z={t \over{sqrt{N}}}$
+
+## One way Analysis of Variance
+
+From $\eta^2$ to $\epsilon^2$ (Eikeland, 1974, p. 16 eq 9 adapted)
+$$\epsilon^2={1-(1-\eta_s^2) \cdot {N-1 \over {N-k}}}$$
+Check the numbers
+```{r}
+
+eta2<-.35
+N<-200
+k<-8
+(eps<-1-(1-eta2)*((N-1)/(N-k)))
+
+```
+
+
+
+
+
+
+
+## Factorial Designs
+
+$$\eta_p^2={{\sigma_f^2} \over{\sigma_f^2+\sigma^2}}$$
+
+Eikeland, 1974, p. 16 eq 9 adapted: let $df$ be the degrees of freedom of the effect of interest, and $K$ the **total** number of groups in the design and $N$ the total sample, 
+
+$$\epsilon_p^2={1-(1-\eta_p^2) \cdot {N-K+df \over {N-K}}}$$
+
+Example from Eikeland, 1974, p. 16 
+```{r}
+N<-20
+k<-4
+df<-1
+N-k+df
+eta2<-.20
+1-(1-eta2)*((N-k+df)/(N-k))
+
+
+```
+
+$$\epsilon_p^2={1-(1-.20) \cdot {20-4+1 \over {20-4}}}=1-.80 \cdot {17 \over 16}=.15$$
+
+
+Porportions of variances: $\delta_e=.40$ $\delta_r=1-.10-.40=.50$ \eta_p^2$=`r .10/.60`.
+
+A check epsilon-squared
+
+```{r}
+
+a<-rep(c(0,1),20)
+b<-rep(c(0,1),each=20)
+y<-a+a*b+rnorm(40)
+a<-factor(a)
+b<-factor(b)
+model<-lm(y~a*b)
+library(car)
+ss<-Anova(model, type = 3)
+ssef<-ss$`Sum Sq`[2]
+sserr<-ss$`Sum Sq`[5]
+dferr<-ss$Df[5]
+mse<-sserr/dferr
+ka<-length(levels(a))
+(eta2<-(ssef/(ssef+sserr)))
+(eps1<-(ssef-(ka-1)*mse)/(ssef+sserr))
+N<-length(a)
+K<-length(levels(a))*length(levels(b))
+(eps2<-1-(1-eta2)*(N-K+ka-1)/(N-K))
+
+```
+
+## Power analysis for contrasts
+
+Adapted from Gpower Manual 3.0, pag 29. 
+$$f={ |\sum{ c_i \cdot u_i}| \over{ \sqrt{k \cdot \sum{c_i^2 \cdot \sigma^2}}}}$$
+
+check the numbers
+```{r}
+
+10/sqrt(4*4*5^2)
+
+```
+## Guessing the interaction effect size from one-way designs
+
+$$f_n={{p_m \over 100} \cdot f_o \cdot \sqrt{{k_0 \over{k_n \cdot l} }}$$
+
+
+$$f_n={{p_m \over 100} \cdot f_o \cdot {1 \over 2}}$$
+
+Examples: `r 1.50*1/2` `r 2*3/2*1/2`,`r .50*.50*1.5`
+
+
+
+
+```{r}
+# table 3 data case1
+meansA<-c(5,2)
+meansAB<-c(5,2,0,0)
+contA<-c(1,-1)
+(val<-abs(meansA%*%contA))
+(f<-val/(sqrt(2*sum(contA^2))))
+
+contAB<-c(1,-1,-1,1)
+(val<-abs(meansAB%*%contAB))
+(f<-val/(sqrt(4*sum(contAB^2))))
+
+# table 3 data case2
+meansAB<-c(5,2,2,5)
+contAB<-c(1,-1,-1,1)
+(val<-abs(meansAB%*%contAB))
+(f<-val/(sqrt(4*sum(contAB^2))))
+
+```
+
+# An example of more complex designs 
+
+
+
+```{r}
+
+es<-.475
+pm<-1.25
+
+cont<-c(-3,-1,1,3)
+m<-c(5,9,16,20)
+md<-as.data.frame(m)
+md$g<-c("s1","s2","s3","s4")
+library(ggplot2)
+gp<-ggplot(md,aes(y=m,x=g,group=1))
+gp + geom_point()+geom_line()
+sigma<-12.239
+(cc<-cont%*%m)
+(f<-cc/sqrt(length(cont)*sum(cont^2)*sigma^2))
+
+
+cont2<-c(-3,-1,1,3,3,1,-1,-3)
+m2<-c(5,9,16,20,5,3,2,1)
+md2<-as.data.frame(m2)
+md2$g<-c("s1","s2","s3","s4")
+md2$g2<-c(rep("Replicated",4),rep("Moderated",4))
+md2
+(cc2<-cont2%*%m2)
+(f2<-cc2/sqrt(length(cont2)*sum(cont2^2*sigma^2)))
+gp<-ggplot(md2,aes(y=m2,x=g,group=g2,shape=g2))
+gp<-gp + geom_point(size=5)+geom_line()
+gp<-gp+xlab("Stimulus intensity")+ylab("Dependent variable")+labs(shape="Moderator")
+gp<-gp + expand_limits(y = c(-5,25))
+gp
+(esn<-es*pm*(sqrt(length(cont)/(length(cont2)*2))))
+
+
+
+## check
+contx<-c(-3,-1,1,3)
+mx<-c(5,3,2,1)
+(ccx<-contx%*%mx)
+(fx<-ccx/sqrt(length(contx)*sum(contx^2)*sigma^2))
+(abs(fx)+f)/f
+
+
+
+```
+
+$$f_n={1.25 \cdot .475 \cdot {\sqrt{4 \over {8 \cdot 2}}}}=0.296$$
+
+
+
+## Interaction between continuous and dichotomous predictors
+
+```{r}
+re<-.50
+rg<-.30
+ri<-re-rg
+
+(sigma<-sqrt((2-(re^2+rg^2))/2))
+
+(ff<-ri^2/(2*(2-re^2-rg^2)))
+
+
+.5*sqrt(650)*ri/sigma
+
+
+doit<-function(k,n) {
+  res<-NULL
+  for (i in seq_len(k)) {
+x1<-rnorm(n/2)
+y1<-.5*x1+rnorm(n/2)
+x1<-as.numeric(scale(x1))
+y1<-as.numeric(scale(y1))
+
+x2<-rnorm(n/2)
+y2<-.3*x2+rnorm(n/2)
+x2<-as.numeric(scale(x2))
+y2<-as.numeric(scale(y2))
+
+(r1<-summary(lm(y1~x1))$coefficients[2,1])
+(r2<-summary(lm(y2~x2))$coefficients[2,1])
+
+
+y<-c(y1,y2)
+x<-c(x1,x2)
+w<-rep(c(0,1),each=n/2)
+
+x<-as.numeric(scale(x))
+w<-factor(w)
+contrasts(w)<-c(1,0)
+y<-as.numeric(scale(y))
+
+mm<-lm(y~x*w)
+sms<-summary(mm)
+p<-sms$coefficients[4,4]
+ri<-summary(mm)$r.squared
+res<-rbind(res,c(r1,r2,r1-r2,coef(mm)[4],p))
+  }
+  res
+}
+
+a<-doit(500,600)
+a
+apply(a,2,mean)
+mean(a[,5]<.05)
+
+```
+
+$$f^2 \approx {\beta_{int}^2 \over{{2 \cdot (2-r_a^2-r_b^2)}}}$$
+
+
+
+
+
+
+
+
+
+## Interaction between continuous
+
+```{r}
+
+### example in the paper
+library(pwr)
+ rx<-.35
+ rm<-.25
+ betai<-.175
+# 
+ (err<-1-rx^2-rm^2)
+
+ 
+ (ff<-betai^2/err)
+ pwr.f2.test(u=1,f2=ff,power=.80)
+# 
+# #####
+
+library(MASS)
+
+one_run<-function(n,r1,r2,r3,debug=F) {
+
+(covmat<-matrix(c(1,0,r1,
+                  0,1,r2,
+                  r1,r2,1), ncol=3, byrow = T))
+
+dat<-try(mvrnorm(n = n, mu = c(0,0,0), Sigma = covmat, empirical = FALSE))
+if (class(dat)=="try-error") {
+print(paste("problems",r1,r2,r3))
+next
+}
+dat<-as.data.frame(dat)
+names(dat)<-c("x","m","y0")
+dat$y<-dat$y0+r3*dat$x*dat$m
+if (debug)
+   print(cor(dat))
+if (debug)
+   print(dim(dat))
+
+x<-as.numeric(scale(dat$x))
+m<-as.numeric(scale(dat$m))
+y<-as.numeric(scale(dat$y))
+
+rx<-sqrt(summary(lm(y~x))$r.squared)
+rw<-sqrt(summary(lm(y~m))$r.squared)
+r2m<-summary(lm(y~m+x))$r.squared
+
+
+mm<-lm(y~x*m)
+ss<-summary(mm)
+rr<-ss$r.squared
+if (debug)
+   print(rr)
+if (debug)
+   print(r2m)
+
+
+f<-(rr-r2m)/(1-rr)
+round(c(rx,rw,rr,1-rr,coef(mm)[4],ss$coefficients[4,4],f),digits=5)
+}
+
+
+doit<-function(k,n,r1,r2,r3) {
+  res<-NULL
+  for (i in seq_len(k)) {
+    one<-one_run(n,r1,r2,r3)
+   res<-rbind(res,one)
+  }
+  res
+}
+
+# 
+# simul<-function() {
+# 
+# rx<-seq(0,.45,by=.15)
+# rm<-.15
+# betai<-seq(.05,.45,by=.10)
+# n<-seq(20,200,40)
+# comb<-expand.grid(rx,rm,betai,n)
+# names(comb)<-c("x","m","int","n")
+# res<-NULL
+# i<-3
+# for (i in 1:nrow(comb)) {
+#   rx<-comb[i,"x"]
+#   rm<-comb[i,"m"]
+#   betai<-comb[i,"int"]
+#   n<-comb[i,"n"]
+# (err<-1-rx^2-rm^2-betai^2)
+# (ff<-betai^2/err)
+# print(paste("input",n,rx,rm,betai))
+# q<-doit(1000,n,rx,rm,betai)
+# aa<-apply(q,2,mean)
+# pp<-pwr.f2.test(1,n-4,f2=ff)
+# opp<-mean(q[,6]<.05)
+# print(c(n,betai,ff,pp$power,opp))
+# res<-rbind(res,c(betai,n,ff,err,aa,pp$power,opp))
+# print(i)
+# }
+# res
+# }
+# 
+# te<-simul()
+# dat<-as.data.frame(te)
+# names(dat)<-c("betai","n","f2","sigma","rx","rm","r2","esigma","ebeta","betap","ef","theorypower","observedpower")
+# library(ggplot2)
+# write.csv(dat,"con_int_sim.cvs")
+# res<-aggregate(dat[,c("f2","ef","theorypower","observedpower")],list(dat$n,dat$betai),mean)
+# res$delta<-(res$f2-res$ef)/res$f2
+# res$deltapower<-res$theorypower-res$observedpower
+# 
+# names(res)[1:2]<-c("N","Betaint")
+# res
+# ggplot(res,aes(y=delta,x=f2,color=factor(N)))+
+#   geom_point()+geom_line()+
+#   ylab("% of discrepancy in f2")+labs(colour="N")
+# ggplot(res,aes(y=deltapower,x=f2,color=factor(N)))+
+#   geom_point()+geom_line()+
+#   ylab("Estimated-Actual power")+labs(colour="N")
+#    
+# 
+# rx<-.40
+# rm<-.25
+# betai<-.40
+# (err<-1-rx^2-rm^2-betai^2)
+# (ff<-betai^2/err)
+# 
+# n<-20
+# q<-doit(1000,n,rx,rm,betai)
+# (aa<-apply(q,2,mean))
+# (pp<-pwr.f2.test(1,n-4,f2=ff))
+# (pp<-pwr.f2.test(1,power = .80,f2=aa[7]))
+# (opp<-mean(q[,6]<.05))
+# 
+# 
+# 
+# simul2<-function() {
+# 
+# rx<-seq(0,.45,by=.15)
+# rm<-.15
+# betai<-seq(.05,.45,by=.10)
+# comb<-expand.grid(rx,rm,betai)
+# names(comb)<-c("x","m","int")
+# res<-NULL
+# for (i in 1:nrow(comb)) {
+#   rx<-comb[i,"x"]
+#   rm<-comb[i,"m"]
+#   betai<-comb[i,"int"]
+#   n<-comb[i,"n"]
+# (err<-1-rx^2-rm^2-betai^2)
+# (ff<-betai^2/err)
+# pp<-pwr.f2.test(1,power=.80,f2=ff)
+# n<-round((pp$v+4),digits = 0)
+# print(paste("input",n,rx,rm,betai))
+# q<-doit(1000,n,rx,rm,betai)
+# aa<-apply(q,2,mean)
+# opp<-mean(q[,6]<.05)
+# print(c(n,betai,ff,pp$power,opp))
+# res<-rbind(res,c(betai,n,ff,err,aa,pp$power,opp))
+# print(i)
+# }
+# res
+# }
+# 
+# te<-simul2()
+# dat2<-as.data.frame(te)
+# names(dat2)<-c("betai","n","f2","sigma","rx","rm","r2","esigma","ebeta","betap","ef","theorypower","observedpower")
+# library(ggplot2)
+# write.csv(dat2,"con_int_sim2.cvs")
+
+ dat<-read.csv("con_int_sim.cvs")
+ head(dat)
+ dat$newf2<-dat$betai^2/(1-dat$rx^2-dat$rm)
+ 
+ res<-aggregate(dat[,c("newf2","ef","theorypower","observedpower")],list(dat$n,dat$betai),mean)
+ res$delta<-(res$newf2-res$ef)/res$ef
+ res$deltapower<-res$theorypower-res$observedpower
+ 
+ names(res)[1:2]<-c("N","Betaint")
+ head(res)
+ library(ggplot2)
+ ggplot(res,aes(y=delta,x=newf2,color=factor(N)))+
+   geom_point()+geom_line()+
+   ylab("Expected - observed f2")+labs(colour="N")
+ ggplot(res,aes(y=deltapower,x=f2,color=factor(N)))+
+   geom_point()+geom_line()+
+   ylab("Estimated-Actual power")+labs(colour="N")
+
+
+dat<-read.csv("con_int_sim2.cvs")
+head(dat)
+
+ res<-aggregate(dat[,c("ef","n","observedpower")],list(dat$betai,dat$f2),mean)
+ res$delta<-(res$f2-res$ef)/res$f2
+ 
+ names(res)[1:2]<-c("Betaint","f2")
+ head(res)
+ library(ggplot2)
+ ggplot(res,aes(y=observedpower,x=Betaint,color=n))+
+   geom_point()+geom_line()+
+   ylab("Observed power")+labs(colour="n")
+
+
+
+rx<-.1
+rm<-.1
+betai<-.5
+rx^2+rm^2+betai^2
+res<-doit(500,200,rx,rm,betai)
+
+(aa<-apply(res,2,mean))
+(err<-1-rx^2-rm^2-betai^2)
+(ff<-betai^2/err)
+(err<-1-rx^2-rm^2)
+(ff<-betai^2/err)
+
+one_run(20000,rx,rm,betai,debug=T)
+
+```
+
+$$f^2 \approx {\beta_{int}^2 \over{{1 - r_{yx}^2-r_{ym}^2}}}$$
+
+
+
+## eta-squared
+
+
+
+
+
+
+
