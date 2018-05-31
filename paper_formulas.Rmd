@@ -107,7 +107,7 @@ check the numbers
 ```
 ## Guessing the interaction effect size from one-way designs
 
-$$f_n={{p_m \over 100} \cdot f_o \cdot \sqrt{{k_0 \over{k_n \cdot l} }}$$
+$$f_n={{p_m \over 100} \cdot f_o \cdot \sqrt{{k_0 \over{k_n \cdot l} }}}$$
 
 
 $$f_n={{p_m \over 100} \cdot f_o \cdot {1 \over 2}}$$
@@ -193,69 +193,19 @@ $$f_n={1.25 \cdot .475 \cdot {\sqrt{4 \over {8 \cdot 2}}}}=0.296$$
 ## Interaction between continuous and dichotomous predictors
 
 ```{r}
-re<-.50
-rg<-.30
-ri<-re-rg
+ra<-.50
+rb<-.00
+(r<-mean(ra,rb))
 
-(sigma<-sqrt((2-(re^2+rg^2))/2))
+ri<-ra-rb
+(sigma<-sqrt((2-(ra^2+rb^2))/2))
 
-(ff<-ri^2/(2*(2-re^2-rg^2)))
+(ff<-ri^2/(2*(2-ra^2-rb^2)))
 
-
-.5*sqrt(650)*ri/sigma
-
-
-doit<-function(k,n) {
-  res<-NULL
-  for (i in seq_len(k)) {
-x1<-rnorm(n/2)
-y1<-.5*x1+rnorm(n/2)
-x1<-as.numeric(scale(x1))
-y1<-as.numeric(scale(y1))
-
-x2<-rnorm(n/2)
-y2<-.3*x2+rnorm(n/2)
-x2<-as.numeric(scale(x2))
-y2<-as.numeric(scale(y2))
-
-(r1<-summary(lm(y1~x1))$coefficients[2,1])
-(r2<-summary(lm(y2~x2))$coefficients[2,1])
-
-
-y<-c(y1,y2)
-x<-c(x1,x2)
-w<-rep(c(0,1),each=n/2)
-
-x<-as.numeric(scale(x))
-w<-factor(w)
-contrasts(w)<-c(1,0)
-y<-as.numeric(scale(y))
-
-mm<-lm(y~x*w)
-sms<-summary(mm)
-p<-sms$coefficients[4,4]
-ri<-summary(mm)$r.squared
-res<-rbind(res,c(r1,r2,r1-r2,coef(mm)[4],p))
-  }
-  res
-}
-
-a<-doit(500,600)
-a
-apply(a,2,mean)
-mean(a[,5]<.05)
 
 ```
 
 $$f^2 \approx {\beta_{int}^2 \over{{2 \cdot (2-r_a^2-r_b^2)}}}$$
-
-
-
-
-
-
-
-
 
 ## Interaction between continuous
 
@@ -265,13 +215,17 @@ $$f^2 \approx {\beta_{int}^2 \over{{2 \cdot (2-r_a^2-r_b^2)}}}$$
 library(pwr)
  rx<-.35
  rm<-.25
- betai<-.175
+ pm<-.50
+ (betai<-rx*pm)
 # 
  (err<-1-rx^2-rm^2)
 
  
  (ff<-betai^2/err)
- pwr.f2.test(u=1,f2=ff,power=.80)
+ library(pwr)
+ (pp<-pwr.f2.test(u=1,f2=ff,power=.80))
+ #required N
+ round(pp$v+3)
 # 
 # #####
 
@@ -279,6 +233,8 @@ library(pwr)
 ```
 
 $$f^2 \approx {\beta_{int}^2 \over{{1 - r_{yx}^2-r_{ym}^2}}}$$
+
+## Mediation analysis
 
 
 
